@@ -8,6 +8,7 @@ from datetime import datetime
 import time
 import subprocess
 import couchdb
+from multiprocessing import Process
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -23,7 +24,7 @@ print(server)
 HOST = '127.0.0.1'   # Symbolic name meaning all available interfaces
 PORT = 13854 # Default mindwave port
 LOG_NAME = "output/log_{0}.json"
-MAX_READING_BUFFER = 5
+MAX_READING_BUFFER = 2
 FG_CMD = "lsappinfo info -only name `lsappinfo front`"
 
 class LogSaver(threading.Thread):
@@ -36,6 +37,10 @@ class LogSaver(threading.Thread):
         for reading in self.readings:
             self.db.save(reading)
             time.sleep(2)
+
+def save_reading(db, reading):
+    db.save(reading)
+
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 readings = []
@@ -63,7 +68,11 @@ try:
             #TODO check for write speed, maybe batch writes after readings size is a set value?
             readings.append(d_json)
             if len(readings) > MAX_READING_BUFFER:
-                LogSaver(readings, db).start()
+                for reading in readings:
+                    p = Process(target=save_logs, args=(reading, db,))
+                    p.start()
+                    p.join()
+                #LogSaver(readings, db).start()
                 readings = []
                 
             
