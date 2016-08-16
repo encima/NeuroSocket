@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <!-- <link rel='stylesheet' href='' /> -->
+    <link href="/stylesheets/c3.min.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
+    <h1><%= title %></h1>
+    <div id="chart"></div>
+    <!--	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>-->
+    <!--<script src='/javascripts/tools.js'></script>-->
+    <script src="/javascripts/d3.v3.min.js"></script>
+    <script src="/javascripts/c3.min.js"></script>
+	<script type="text/javascript">
+     var DB_HOST = 'http://localhost:5984/';
+     var DB = 'mindwave_logs';
+     var readings = [];
+     var plot;
+     var drawn = false;
+     var times = ['time'],
+         theta = ['theta'],
+         beta = ['beta'],
+         delta = ['delta'];
+
+		window.onload = function() {
+            /*var date = new Date();
+            var year = date.getFullYear(),
+            month = date.getMonth() + 1,
+            day = date.getDate();*/
+//TODO store the since var so as to avoid huge timescales
+           if (window.EventSource) {
+              var resultsIn = {};
+              var sourceIn = new EventSource(DB_HOST + DB + "/_changes?feed=eventsource");
+              sourceIn.onerror = function(e) {
+                    console.log('EventSource failed');
+                    console.log(e);
+              };
+
+              sourceIn.onopen = function(e) {
+                console.log('EventSource to CouchDB open');
+              };
+
+              sourceIn.onmessage = function(e) {
+                  var change = JSON.parse(e.data);
+                  getCouchDoc(change['id'], function(doc) {
+                    if(doc.indexOf('blinkStrength') === -1) {
+                        var reading = JSON.parse(doc);
+                        var time = formatDate(reading['time'].split('.')[0]);
+                       //only add if time does not exist already 
+                        if(times.indexOf(time) === -1) {
+                            console.log(times);
+                            theta.push(reading['eegPower']['theta']);
+                            beta.push(reading['eegPower']['highBeta']);
+                            delta.push(reading['eegPower']['delta']);
+                            times.push(time);
+                        }
+                            setTimeout(function(){ drawPlot() }, 1000);
+                    }
+                  });
+            
+              };
+            }
+        };
+
+        function getCouchDoc(id, cb) {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function() { 
+                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                    cb(xmlHttp.responseText);
+                }
+            xmlHttp.open("GET", DB_HOST + DB + '/' + id, true); // true for asynchronous 
+            xmlHttp.send(null);
+        }
+
+        var formatDate = d3.time.format("%Y-%m-%d %H:%M:%S").parse;
+
+        function drawPlot() {A
+            //create plot if exists; update otherwise
+            if(drawn === false) {
+                plot = c3.generate({
+                    bindto: '#chart',
+                    data: {
+                        x: 'time',
+                //        xFormat: '%Y%m%d', // 'xFormat' can be used as custom format of 'x'
+                        columns: [
+                            times,
+                            theta,
+                            beta,
+                            delta
+                        ]
+                    },
+                    axis: {
+                        x: {
+                            type: 'timeseries',
+                            tick: {
+                                format: '%Y-%m-%d %H:%M:%S'
+                            }
+                        }
+                    }
+                });
+                drawn = true;
+            } else {
+                plot.load({
+                    columns: [
+                        times, 
+                        theta,
+                        beta,
+                        delta
+                    ]
+                });
+           }
+        }
+
+
+	</script>
+  </body>
+</html>
