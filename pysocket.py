@@ -38,7 +38,7 @@ class LogSaver(threading.Thread):
             self.db.save(reading)
             time.sleep(2)
 
-def save_reading(db, reading):
+def save_reading(reading):
     db.save(reading)
 
 
@@ -69,7 +69,7 @@ try:
             readings.append(d_json)
             if len(readings) > MAX_READING_BUFFER:
                 for reading in readings:
-                    p = Process(target=save_logs, args=(reading, db,))
+                    p = Process(target=save_reading, args=(reading,))
                     p.start()
                     p.join()
                 #LogSaver(readings, db).start()
