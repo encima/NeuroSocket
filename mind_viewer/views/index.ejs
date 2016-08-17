@@ -53,6 +53,7 @@
                             theta.push(reading['eegPower']['theta']);
                             beta.push(reading['eegPower']['highBeta']);
                             delta.push(reading['eegPower']['delta']);
+                            //TODO lowBeta, lowGamme, highGamme etc
                             times.push(time);
                         }
                             setTimeout(function(){ drawPlot() }, 1000);
