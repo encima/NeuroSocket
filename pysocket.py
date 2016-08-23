@@ -1,6 +1,6 @@
 import socket
 import sys
-from thread import *
+#from thread import *
 import json
 import pprint
 from datetime import datetime
@@ -25,16 +25,16 @@ print(server)
 
 LOG_NAME = "output/log_{0}.json"
 
-class LogSaver(threading.Thread):
-    def __init__(self, readings, db):
-        self.readings = readings
-        self.db = db
-        threading.Thread.__init__ (self)
-    
-    def run(self):
-        for reading in self.readings:
-            self.db.save(reading)
-            time.sleep(2)
+#class LogSaver(threading.Thread):
+#    def __init__(self, readings, db):
+#        self.readings = readings
+#        self.db = db
+#        threading.Thread.__init__ (self)
+#
+#    def run(self):
+#        for reading in self.readings:
+#            self.db.save(reading)
+#            time.sleep(2)
 
 def save_reading(reading):
     db.save(reading)
@@ -48,16 +48,21 @@ sock.connect(server_address)
 try:
     # Send config message to mindwave
     message = "{\"enableRawOutput\": false, \"format\": \"Json\"}\n";
-    print('sending "%s"' % message)
-    sock.sendall(message)
+    # print('sending "%s"' % message)
+    sock.send(config.CONFSTRING.encode('utf8'))
 
     # Look for the response
-    
+
     while True:
         data = sock.recv(1024)
-        if data:
-            d_json = json.loads(data)
-            #add time and foreground app to json 
+        dataform = str(data).strip("'<>() ").replace('\'', '\"').replace("b\"","").replace("\\r","")
+        print(dataform)
+        struct = json.loads(dataform)
+        if struct:
+            print(str(data))
+            d_json = struct
+            # d_json = json.loads(str(data))
+            #add time and foreground app to json
             d_json['time'] = str(datetime.now())
             foreground_app = subprocess.check_output(config.FG_CMD, stderr=subprocess.STDOUT, shell=True)
             foreground_app = foreground_app.split("=")[1].strip().replace("\"","")
@@ -77,8 +82,8 @@ try:
                 p = Process(target=save_reading, args=(reading,))
                 p.start()
                 p.join()
-                
-            
+
+
 #TODO add cl option for logging
 except KeyboardInterrupt:
     print("Quit; saving readings")
@@ -87,4 +92,4 @@ except KeyboardInterrupt:
         #, indent=4)
 finally:
     print(sys.stderr, 'closing socket')
-    sock.close() 
+    sock.close()

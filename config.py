@@ -1,11 +1,11 @@
 HOST = "127.0.0.1"
-PORT = 5984
+PORT = 13854
+DB_PORT = 5984
+CONFSTRING = '{"enableRawOutput": false, "format": "Json"}\n'
 DB_USERNAME = "encima"
 DB_PWD = "Cocaine5Unicorn_Hiatus"
 DB_NAME = 'mindwave_logs'
-DB_DELERE = True
+DB_DELETE = True
 FG_CMD = "lsappinfo info -only name `lsappinfo front`"
 READING_BUFFER = 2
 BUFFER = False
-
-
