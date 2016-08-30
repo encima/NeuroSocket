@@ -15,38 +15,36 @@ pp = pprint.PrettyPrinter(indent=4)
 server = couchdb.Server()
 server.resource.credentials = (config.DB_USERNAME, config.DB_PWD)
 db = None
-#print(server.login('encima', 'Cocaine6Unicorn_Hiatus'))
+
 if config.DB_DELETE:
     server.delete(config.DB_NAME)
     db = server.create(config.DB_NAME)
 else:
     db = server[config.DB_NAME]
-
+print("DB Connected")
 LOG_NAME = "output/log_{0}.json"
 HOST_INFO = platform.uname()
+print("Running on {}".format(HOST_INFO.system))
 
 def save_reading(reading):
     db.save(reading)
 
 def get_app(host):
-    foreground_app = None 
-    print(config.FG_CMD[host])
+    foreground_app = None
     try:
         foreground_app = subprocess.check_output(config.FG_CMD[host], stderr=subprocess.STDOUT, shell=True)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
-    print(foreground_app)
     if host == 'Linux':
         #TODO format to extract window name
-        foreground_app = foreground_app.split("=")[1].strip().replace("\"","")
-    elif host == 'Mac': #check this is the uname output 
-        foreground_app = foreground_app.split("=")[1].strip().replace("\"","")
+        foreground_app = foreground_app.decode().split("=")[1].strip().replace("\"","")
+    elif host == 'Mac': #check this is the uname output
+        foreground_app = foreground_app.decode().split("=")[1].strip().replace("\"","")
     elif host == 'Windows':
-        #TODO format to extract window name`
-        foreground_app = foreground_app.split("=")[1].strip().replace("\"","")
+        foreground_app = foreground_app.decode().split("\\")[-1].strip().replace("\"","")
     return foreground_app
 
-print(get_app(HOST_INFO.system))
+get_app(HOST_INFO.system)
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 readings = []
 server_address = (config.HOST, config.PORT)
@@ -61,13 +59,12 @@ try:
     # Look for the response
     while True:
         data = sock.recv(1024)
-        dataform = str(data).strip("'<>() ").replace('\'', '\"').replace("b\"","").replace("\\r","")
+        dataform = data.decode()
+        # str(data).strip("'<>() ").replace('\'', '\"').replace("b\"","").replace("\\r","")
         print(dataform)
         struct = json.loads(dataform)
         if struct:
-            print(str(data))
             d_json = struct
-            # d_json = json.loads(str(data))
             #add time and foreground app to json
             d_json['time'] = str(datetime.now())
             d_json['host'] = HOST_INFO.node
@@ -82,9 +79,8 @@ try:
                         p.join()
                     readings = []
             else:
-                p = Process(target=save_reading, args=(reading,))
-                p.start()
-                p.join()
+                save_reading(d_json)
+
 
 
 #TODO add cl option for logging
