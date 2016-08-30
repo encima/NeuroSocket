@@ -64,22 +64,23 @@ try:
         print(dataform)
         struct = json.loads(dataform)
         if struct:
-            d_json = struct
-            #add time and foreground app to json
-            d_json['time'] = str(datetime.now())
-            d_json['host'] = HOST_INFO.node
-            d_json['app'] = get_app(HOST_INFO.system)
-            pp.pprint(d_json)
-            if config.BUFFER:
-                readings.append(d_json)
-                if len(readings) > MAX_READING_BUFFER:
-                    for reading in readings:
-                        p = Process(target=save_reading, args=(reading,))
-                        p.start()
-                        p.join()
-                    readings = []
-            else:
-                save_reading(d_json)
+            if ('status' in struct and struct['status'] != "scanning") or 'status' not in struct:
+                d_json = struct
+                #add time and foreground app to json
+                d_json['time'] = str(datetime.now())
+                d_json['host'] = HOST_INFO.node
+                d_json['app'] = get_app(HOST_INFO.system)
+                pp.pprint(d_json)
+                if config.BUFFER:
+                    readings.append(d_json)
+                    if len(readings) > MAX_READING_BUFFER:
+                        for reading in readings:
+                            p = Process(target=save_reading, args=(reading,))
+                            p.start()
+                            p.join()
+                        readings = []
+                else:
+                    save_reading(d_json)
 
 
 
