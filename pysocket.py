@@ -1,6 +1,6 @@
 import socket
 import sys
-#from thread import *
+import platform
 import json
 import pprint
 from datetime import datetime
@@ -21,25 +21,32 @@ if config.DB_DELETE:
     db = server.create(config.DB_NAME)
 else:
     db = server[config.DB_NAME]
-print(server)
 
 LOG_NAME = "output/log_{0}.json"
-
-#class LogSaver(threading.Thread):
-#    def __init__(self, readings, db):
-#        self.readings = readings
-#        self.db = db
-#        threading.Thread.__init__ (self)
-#
-#    def run(self):
-#        for reading in self.readings:
-#            self.db.save(reading)
-#            time.sleep(2)
+HOST_INFO = platform.uname()
 
 def save_reading(reading):
     db.save(reading)
 
+def get_app(host):
+    foreground_app = None 
+    print(config.FG_CMD[host])
+    try:
+        foreground_app = subprocess.check_output(config.FG_CMD[host], stderr=subprocess.STDOUT, shell=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
+    print(foreground_app)
+    if host == 'Linux':
+        #TODO format to extract window name
+        foreground_app = foreground_app.split("=")[1].strip().replace("\"","")
+    elif host == 'Mac': #check this is the uname output 
+        foreground_app = foreground_app.split("=")[1].strip().replace("\"","")
+    elif host == 'Windows':
+        #TODO format to extract window name`
+        foreground_app = foreground_app.split("=")[1].strip().replace("\"","")
+    return foreground_app
 
+print(get_app(HOST_INFO.system))
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 readings = []
 server_address = (config.HOST, config.PORT)
@@ -52,7 +59,6 @@ try:
     sock.send(config.CONFSTRING.encode('utf8'))
 
     # Look for the response
-
     while True:
         data = sock.recv(1024)
         dataform = str(data).strip("'<>() ").replace('\'', '\"').replace("b\"","").replace("\\r","")
@@ -64,11 +70,9 @@ try:
             # d_json = json.loads(str(data))
             #add time and foreground app to json
             d_json['time'] = str(datetime.now())
-            foreground_app = subprocess.check_output(config.FG_CMD, stderr=subprocess.STDOUT, shell=True)
-            foreground_app = foreground_app.split("=")[1].strip().replace("\"","")
-            d_json['app'] = foreground_app
+            d_json['host'] = HOST_INFO.node
+            d_json['app'] = get_app(HOST_INFO.system)
             pp.pprint(d_json)
-            #TODO check for write speed, maybe batch writes after readings size is a set value?
             if config.BUFFER:
                 readings.append(d_json)
                 if len(readings) > MAX_READING_BUFFER:
@@ -76,7 +80,6 @@ try:
                         p = Process(target=save_reading, args=(reading,))
                         p.start()
                         p.join()
-                    #LogSaver(readings, db).start()
                     readings = []
             else:
                 p = Process(target=save_reading, args=(reading,))
