@@ -34,20 +34,21 @@ def get_app(host):
     foreground_app = None
     try:
         foreground_app = subprocess.check_output(config.FG_CMD[host], stderr=subprocess.STDOUT, shell=True)
-        foreground_app = foreground_app.decode().replace("\"","")
+        foreground_app = foreground_app.decode()
+        print(foreground_app)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
     if host == 'Linux':
-        #TODO format to extract window name
+        foreground_app = foreground_app.replace("\"","")
         foreground_app = re.split("= |\n", foreground_app)
         foreground_app = {'program': foreground_app[3], 'title': foreground_app[1]}
-    elif host == 'Mac': #check this is the uname output
-        foreground_app = foreground_app.split("=")[1].strip().replace("\"","")
+    elif host == 'Darwin':
+        foreground_app = json.loads(foreground_app)
     elif host == 'Windows':
         foreground_app = foreground_app.split("\\")[-1].strip().replace("\"","")
     return foreground_app
 
-print(get_app(HOST_INFO.system))
+get_app(HOST_INFO.system)
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 readings = []
 server_address = (config.HOST, config.PORT)
