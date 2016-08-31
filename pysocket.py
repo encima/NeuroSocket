@@ -8,19 +8,20 @@ import time
 import subprocess
 import couchdb
 from multiprocessing import Process
+import re
 import config
 
 pp = pprint.PrettyPrinter(indent=4)
 
-server = couchdb.Server()
-server.resource.credentials = (config.DB_USERNAME, config.DB_PWD)
+#server = couchdb.Server()
+#server.resource.credentials = (config.DB_USERNAME, config.DB_PWD)
 db = None
 
-if config.DB_DELETE:
-    server.delete(config.DB_NAME)
-    db = server.create(config.DB_NAME)
-else:
-    db = server[config.DB_NAME]
+#if config.DB_DELETE:
+#    server.delete(config.DB_NAME)
+#    db = server.create(config.DB_NAME)
+#else:
+#    db = server[config.DB_NAME]
 print("DB Connected")
 LOG_NAME = "output/log_{0}.json"
 HOST_INFO = platform.uname()
@@ -33,18 +34,20 @@ def get_app(host):
     foreground_app = None
     try:
         foreground_app = subprocess.check_output(config.FG_CMD[host], stderr=subprocess.STDOUT, shell=True)
+        foreground_app = foreground_app.decode().replace("\"","")
     except subprocess.CalledProcessError as e:
         raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
     if host == 'Linux':
         #TODO format to extract window name
-        foreground_app = foreground_app.decode().split("=")[1].strip().replace("\"","")
+        foreground_app = re.split("= |\n", foreground_app)
+        foreground_app = {'program': foreground_app[3], 'title': foreground_app[1]}
     elif host == 'Mac': #check this is the uname output
-        foreground_app = foreground_app.decode().split("=")[1].strip().replace("\"","")
+        foreground_app = foreground_app.split("=")[1].strip().replace("\"","")
     elif host == 'Windows':
-        foreground_app = foreground_app.decode().split("\\")[-1].strip().replace("\"","")
+        foreground_app = foreground_app.split("\\")[-1].strip().replace("\"","")
     return foreground_app
 
-get_app(HOST_INFO.system)
+print(get_app(HOST_INFO.system))
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 readings = []
 server_address = (config.HOST, config.PORT)
