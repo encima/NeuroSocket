@@ -13,15 +13,14 @@ import config
 
 pp = pprint.PrettyPrinter(indent=4)
 
-#server = couchdb.Server()
-#server.resource.credentials = (config.DB_USERNAME, config.DB_PWD)
+server = couchdb.Server()
+server.resource.credentials = (config.DB_USERNAME, config.DB_PWD)
 db = None
 
-#if config.DB_DELETE:
-#    server.delete(config.DB_NAME)
-#    db = server.create(config.DB_NAME)
-#else:
-#    db = server[config.DB_NAME]
+try:
+    db = server[config.DB_NAME]
+except:
+    db = server.create(config.DB_NAME)
 print("DB Connected")
 LOG_NAME = "output/log_{0}.json"
 HOST_INFO = platform.uname()
@@ -35,7 +34,6 @@ def get_app(host):
     try:
         foreground_app = subprocess.check_output(config.FG_CMD[host], stderr=subprocess.STDOUT, shell=True)
         foreground_app = foreground_app.decode()
-        print(foreground_app)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
     if host == 'Linux':
@@ -45,7 +43,7 @@ def get_app(host):
     elif host == 'Darwin':
         foreground_app = json.loads(foreground_app)
     elif host == 'Windows':
-        foreground_app = foreground_app.split("\\")[-1].strip().replace("\"","")
+        foreground_app = json.loads(foreground_app)
     return foreground_app
 
 get_app(HOST_INFO.system)
@@ -64,28 +62,31 @@ try:
     while True:
         data = sock.recv(1024)
         dataform = data.decode()
-        # str(data).strip("'<>() ").replace('\'', '\"').replace("b\"","").replace("\\r","")
-        print(dataform)
-        struct = json.loads(dataform)
-        if struct:
-            if ('status' in struct and struct['status'] != "scanning") or 'status' not in struct:
-                d_json = struct
-                #add time and foreground app to json
-                d_json['time'] = str(datetime.now())
-                d_json['host'] = HOST_INFO.node
-                d_json['app'] = get_app(HOST_INFO.system)
-                pp.pprint(d_json)
-                if config.BUFFER:
-                    readings.append(d_json)
-                    if len(readings) > MAX_READING_BUFFER:
-                        for reading in readings:
-                            p = Process(target=save_reading, args=(reading,))
-                            p.start()
-                            p.join()
-                        readings = []
-                else:
-                    save_reading(d_json)
-
+        #print(dataform)
+        try:
+            struct = json.loads(dataform)
+            if struct:
+                if ('status' in struct and struct['status'] != "scanning") or 'status' not in struct:
+                    d_json = struct
+                    #add time and foreground app to json
+                    d_json['time'] = str(datetime.now())
+                    d_json['host'] = HOST_INFO.node
+                    d_json['app'] = get_app(HOST_INFO.system)
+#                pp.pprint(d_json)
+                    if config.BUFFER:
+                        readings.append(d_json)
+                        if len(readings) > MAX_READING_BUFFER:
+                            for reading in readings:
+                                p = Process(target=save_reading, args=(reading,))
+                                p.start()
+                                p.join()
+                            readings = []
+                    else:
+                        save_reading(d_json)
+        except:
+            print("error parsing data to json, skipping")
+            print(dataform)
+            print("------")
 
 
 #TODO add cl option for logging
