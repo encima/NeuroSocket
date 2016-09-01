@@ -62,9 +62,10 @@ try:
     while True:
         data = sock.recv(1024)
         dataform = data.decode()
-        #print(dataform)
+        print(dataform)
         try:
             struct = json.loads(dataform)
+        
             if struct:
                 if ('status' in struct and struct['status'] != "scanning") or 'status' not in struct:
                     d_json = struct
@@ -82,9 +83,10 @@ try:
                                 p.join()
                             readings = []
                     else:
-                        save_reading(d_json)
-        except:
-            print("error parsing data to json, skipping")
+                        save_reading(d_json) 
+        except Exception as e:
+            print("------")
+            print(str(e))
             print(dataform)
             print("------")
 
