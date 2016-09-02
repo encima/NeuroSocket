@@ -62,10 +62,8 @@ try:
     while True:
         data = sock.recv(1024)
         dataform = data.decode()
-        print(dataform)
         try:
             struct = json.loads(dataform)
-        
             if struct:
                 if ('status' in struct and struct['status'] != "scanning") or 'status' not in struct:
                     d_json = struct
@@ -73,7 +71,7 @@ try:
                     d_json['time'] = str(datetime.now())
                     d_json['host'] = HOST_INFO.node
                     d_json['app'] = get_app(HOST_INFO.system)
-#                pp.pprint(d_json)
+                    pp.pprint(d_json)
                     if config.BUFFER:
                         readings.append(d_json)
                         if len(readings) > MAX_READING_BUFFER:
@@ -86,7 +84,7 @@ try:
                         save_reading(d_json) 
         except Exception as e:
             print("------")
-            print(str(e))
+            ndir%\system32\bash.exe -cur_console:pprint(str(e))
             print(dataform)
             print("------")
 
