@@ -13,4 +13,4 @@ Couch then opens up an EventSource through a websocket and Node subscribes to th
 * Save the since var so Node can begin from set points
     * Set it as a URL param?
 * Maybe port to D3 so I am not relying on 2 libs for one thing but C3 is nice
-
+* xprintidle - detect idle time (ms) in linux (using X server)

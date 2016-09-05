@@ -41,7 +41,6 @@ def get_app(host):
     try:
         foreground_app = subprocess.check_output(config.FG_CMD[host], stderr=subprocess.STDOUT, shell=True)
         foreground_app = foreground_app.decode()
-        print(foreground_app)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
     if host == 'Linux':
@@ -52,9 +51,14 @@ def get_app(host):
         foreground_app = json.loads(foreground_app)
     elif host == 'Windows':
         foreground_app = json.loads(foreground_app)
-    return foreground_app
+    return foreground_app 
 
-get_app(HOST_INFO.system)
+def enrich_reading(d_json):
+    d_json['time'] = str(datetime.now())
+    d_json['host'] = HOST_INFO.node
+    d_json['app'] = get_app(HOST_INFO.system)
+    d_json['platform'] = HOST_INFO.system
+
 sock = None
 if args.mindwave:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -81,11 +85,8 @@ try:
                 if struct:
                     if ('status' in struct and struct['status'] != "scanning") or 'status' not in struct:
                         d_json = struct
-                        #add time and foreground app to json
-                        d_json['time'] = str(datetime.now())
-                        d_json['host'] = HOST_INFO.node
-                        d_json['app'] = get_app(HOST_INFO.system)
-                        d_json['platform'] = HOST_INFO.system
+                        #add time and foreground app to json 
+                        enrich_reading(d_json)
 #                pp.pprint(d_json)
                         if config.BUFFER:
                             readings.append(d_json)
@@ -104,10 +105,8 @@ try:
                 print("------")
         else:
             d_json = {}
-            d_json['time'] = str(datetime.now())
-            d_json['host'] = HOST_INFO.node
-            d_json['app'] = get_app(HOST_INFO.system)
-            d_json['platform'] = HOST_INFO.system
+            enrich_reading(d_json)
+            pp.pprint(d_json)
             save_reading(d_json)
             time.sleep(args.interval)
 
@@ -120,4 +119,5 @@ except KeyboardInterrupt:
         #, indent=4)
 finally:
     print(sys.stderr, 'closing socket')
-    sock.close()
+    if sock:
+        sock.close()
