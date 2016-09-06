@@ -10,17 +10,24 @@ import couchdb
 from multiprocessing import Process
 import re
 import config
+import argparse
 
 pp = pprint.PrettyPrinter(indent=4)
 
+parser = argparse.ArgumentParser(description='Log all the productivity')
+parser.add_argument('-o','--output',help='Output file name', required=False)
+parser.add_argument('-d','--dbname',help='DB name', required=False, default=config.DB_NAME)
+parser.add_argument('-i','--interval',help='Interval for readings', required=False, default=30, type=int)
+parser.add_argument("-m", "--mindwave", help="Connect to mindwave", action="store_true")
+args = parser.parse_args()
 server = couchdb.Server()
 server.resource.credentials = (config.DB_USERNAME, config.DB_PWD)
 db = None
 
 try:
-    db = server[config.DB_NAME]
+    db = server[args.dbname]
 except:
-    db = server.create(config.DB_NAME)
+    db = server.create(args.dbname)
 print("DB Connected")
 LOG_NAME = "output/log_{0}.json"
 HOST_INFO = platform.uname()
@@ -44,49 +51,64 @@ def get_app(host):
         foreground_app = json.loads(foreground_app)
     elif host == 'Windows':
         foreground_app = json.loads(foreground_app)
-    return foreground_app
+    return foreground_app 
 
-get_app(HOST_INFO.system)
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-readings = []
-server_address = (config.HOST, config.PORT)
-print('connecting to %s port %s' % server_address)
-sock.connect(server_address)
+def enrich_reading(d_json):
+    d_json['time'] = str(datetime.now())
+    d_json['host'] = HOST_INFO.node
+    d_json['app'] = get_app(HOST_INFO.system)
+    d_json['platform'] = HOST_INFO.system
+
+sock = None
+if args.mindwave:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    readings = []
+    server_address = (config.HOST, config.PORT)
+    print('connecting to %s port %s' % server_address)
+    sock.connect(server_address)
 try:
-    # Send config message to mindwave
-    message = "{\"enableRawOutput\": false, \"format\": \"Json\"}\n";
+    # Send config message to mindwave 
+    if sock:
+        message = "{\"enableRawOutput\": false, \"format\": \"Json\"}\n";
     # print('sending "%s"' % message)
-    sock.send(config.CONFSTRING.encode('utf8'))
+        sock.send(config.CONFSTRING.encode('utf8'))
 
     # Look for the response
     while True:
-        data = sock.recv(1024)
-        dataform = data.decode()
-        try:
-            struct = json.loads(dataform)
-            if struct:
-                if ('status' in struct and struct['status'] != "scanning") or 'status' not in struct:
-                    d_json = struct
-                    #add time and foreground app to json
-                    d_json['time'] = str(datetime.now())
-                    d_json['host'] = HOST_INFO.node
-                    d_json['app'] = get_app(HOST_INFO.system)
-                    pp.pprint(d_json)
-                    if config.BUFFER:
-                        readings.append(d_json)
-                        if len(readings) > MAX_READING_BUFFER:
-                            for reading in readings:
-                                p = Process(target=save_reading, args=(reading,))
-                                p.start()
-                                p.join()
-                            readings = []
-                    else:
-                        save_reading(d_json) 
-        except Exception as e:
-            print("------")
-            ndir%\system32\bash.exe -cur_console:pprint(str(e))
+        if args.mindwave:
+            data = sock.recv(1024)
+            dataform = data.decode()
             print(dataform)
-            print("------")
+            try:
+                struct = json.loads(dataform)
+            
+                if struct:
+                    if ('status' in struct and struct['status'] != "scanning") or 'status' not in struct:
+                        d_json = struct
+                        #add time and foreground app to json 
+                        enrich_reading(d_json)
+#               pp.pprint(d_json)
+                        if config.BUFFER:
+                            readings.append(d_json)
+                            if len(readings) > MAX_READING_BUFFER:
+                                for reading in readings:
+                                    p = Process(target=save_reading, args=(reading,))
+                                    p.start()
+                                    p.join()
+                                readings = []
+                        else:
+                            save_reading(d_json) 
+            except Exception as e:
+                print("------")
+                print(str(e))
+                print(dataform)
+                print("------")
+        else:
+            d_json = {}
+            enrich_reading(d_json)
+            pp.pprint(d_json)
+            save_reading(d_json)
+            time.sleep(args.interval)
 
 
 #TODO add cl option for logging
@@ -97,4 +119,5 @@ except KeyboardInterrupt:
         #, indent=4)
 finally:
     print(sys.stderr, 'closing socket')
-    sock.close()
+    if sock:
+        sock.close()
