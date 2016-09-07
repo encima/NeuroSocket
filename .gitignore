@@ -1,7 +1,7 @@
 #### joe made this: http://goel.io/joe
 
 #####=== Node ===#####
-ns/*
+ns/**
 # Logs
 logs
 *.log
