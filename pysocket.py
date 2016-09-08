@@ -17,6 +17,7 @@ pp = pprint.PrettyPrinter(indent=4)
 parser = argparse.ArgumentParser(description='Log all the productivity')
 parser.add_argument('-o','--output',help='Output file name', required=False)
 parser.add_argument('-d','--dbname',help='DB name', required=False, default=config.DB_NAME)
+parser.add_argument('-l', '--logfile', help='log file path', required=False)
 parser.add_argument('-i','--interval',help='Interval for readings', required=False, default=30, type=int)
 parser.add_argument("-m", "--mindwave", help="Connect to mindwave", action="store_true")
 args = parser.parse_args()
@@ -24,17 +25,22 @@ server = couchdb.Server()
 server.resource.credentials = (config.DB_USERNAME, config.DB_PWD)
 db = None
 
-try:
-    db = server[args.dbname]
-except:
-    db = server.create(args.dbname)
-print("DB Connected")
+if not args.logfile:
+    try:
+        db = server[args.dbname]
+    except:
+        db = server.create(args.dbname)
+    print("DB Connected")
 LOG_NAME = "output/log_{0}.json"
 HOST_INFO = platform.uname()
 print("Running on {}".format(HOST_INFO.system))
 
 def save_reading(reading):
-    db.save(reading)
+    if args.logfile:
+        #TODO save to logfile
+        pass
+    else:
+        db.save(reading)
 
 def get_app(host):
     foreground_app = None
@@ -46,7 +52,9 @@ def get_app(host):
     if host == 'Linux':
         foreground_app = foreground_app.replace("\"","")
         foreground_app = re.split("= |\n", foreground_app)
-        foreground_app = {'program': foreground_app[3], 'title': foreground_app[1]}
+        idleTime = subprocess.check_output("xprintidle", stderr=subprocess.STDOUT,shell=True).decode()
+        idleTime = float(idleTime)/1000
+        foreground_app = {'program': foreground_app[3], 'title': foreground_app[1], 'idleTime':idleTime}
     elif host == 'Darwin':
         foreground_app = json.loads(foreground_app)
     elif host == 'Windows':
