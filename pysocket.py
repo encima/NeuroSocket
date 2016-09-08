@@ -15,7 +15,6 @@ import argparse
 pp = pprint.PrettyPrinter(indent=4)
 
 parser = argparse.ArgumentParser(description='Log all the productivity')
-parser.add_argument('-o','--output',help='Output file name', required=False)
 parser.add_argument('-d','--dbname',help='DB name', required=False, default=config.DB_NAME)
 parser.add_argument('-l', '--logdir', help='Directory to save logs', required=False)
 parser.add_argument('-i','--interval',help='Interval for readings', required=False, default=30, type=int)
