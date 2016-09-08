@@ -17,28 +17,33 @@ pp = pprint.PrettyPrinter(indent=4)
 parser = argparse.ArgumentParser(description='Log all the productivity')
 parser.add_argument('-o','--output',help='Output file name', required=False)
 parser.add_argument('-d','--dbname',help='DB name', required=False, default=config.DB_NAME)
-parser.add_argument('-l', '--logfile', help='log file path', required=False)
+parser.add_argument('-l', '--logdir', help='Directory to save logs', required=False)
 parser.add_argument('-i','--interval',help='Interval for readings', required=False, default=30, type=int)
 parser.add_argument("-m", "--mindwave", help="Connect to mindwave", action="store_true")
 args = parser.parse_args()
 server = couchdb.Server()
 server.resource.credentials = (config.DB_USERNAME, config.DB_PWD)
 db = None
-
-if not args.logfile:
+log_file = None
+if not args.logdir:
     try:
         db = server[args.dbname]
     except:
         db = server.create(args.dbname)
     print("DB Connected")
-LOG_NAME = "output/log_{0}.json"
+else:
+    print(datetime.today().toordinal())
+    logpath = "{0}/log_{1}.json".format(args.logdir, datetime.today().toordinal())
+    log_file = open(logpath, 'a+', encoding="utf8")
+    print("Opened {} for writing".format(logpath))
+
+
 HOST_INFO = platform.uname()
 print("Running on {}".format(HOST_INFO.system))
 
 def save_reading(reading):
-    if args.logfile:
-        #TODO save to logfile
-        pass
+    if args.logdir:
+        json.dump(reading, log_file)
     else:
         db.save(reading)
 
@@ -122,10 +127,10 @@ try:
 #TODO add cl option for logging
 except KeyboardInterrupt:
     print("Quit; saving readings")
-    #with open(LOG_NAME.format(str(datetime.now())), 'w') as outfile:
-    #    json.dump(readings, outfile)
-        #, indent=4)
 finally:
-    print(sys.stderr, 'closing socket')
+    if log_file is not None:
+        log_file.close()
+        print("Closing Log")
     if sock:
         sock.close()
+        print(sys.stderr, 'closing socket')
