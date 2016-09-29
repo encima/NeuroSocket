@@ -1,4 +1,4 @@
-#!/mnt/c/Users/encim/development/research/NeuroSocket/ns/bin/python
+#!/Users/encima/development/neurosky/neurosocket/ns/bin/python
 
 import sys
 import getopt

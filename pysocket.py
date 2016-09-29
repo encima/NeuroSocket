@@ -12,6 +12,9 @@ import re
 import config
 import argparse
 
+#from Foundation import *
+#from ScriptingBridge import *
+
 pp = pprint.PrettyPrinter(indent=4)
 
 parser = argparse.ArgumentParser(description='Log all the productivity')

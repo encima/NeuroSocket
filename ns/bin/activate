@@ -40,7 +40,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/mnt/c/Users/encim/development/research/NeuroSocket/ns"
+VIRTUAL_ENV="/Users/encima/development/neurosky/neurosocket/ns"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
