@@ -16,15 +16,34 @@ import osx.OSXActiveApp as osaa
 
 pp = pprint.PrettyPrinter(indent=4)
 parser = argparse.ArgumentParser(description='Log all the productivity')
+<<<<<<< HEAD
 parser.add_argument('-o','--output',help='Output file name', required=False)
 parser.add_argument('-d','--dbname',help='DB name', required=False, default=None)
+=======
+parser.add_argument('-d','--dbname',help='DB name', required=False, default=config.DB_NAME)
+parser.add_argument('-l', '--logdir', help='Directory to save logs', required=False)
+>>>>>>> 728b75a83f7c2e71da461ee71168061df09e5d7f
 parser.add_argument('-i','--interval',help='Interval for readings', required=False, default=30, type=int)
 parser.add_argument("-m", "--mindwave", help="Connect to mindwave", action="store_true")
 args = parser.parse_args()
 server = couchdb.Server()
 server.resource.credentials = (config.DB_USERNAME, config.DB_PWD)
 db = None
+log_file = None
+if not args.logdir:
+    try:
+        db = server[args.dbname]
+    except:
+        db = server.create(args.dbname)
+    print("DB Connected")
+else:
+    print(datetime.today().toordinal())
+    logpath = "{0}/log_{1}.json".format(args.logdir, datetime.today().toordinal())
+    log_file = open(logpath, 'a+', encoding="utf8")
+    print("Opened {} for writing".format(logpath))
 
+
+<<<<<<< HEAD
 if args.dbname is not None:
     try:
         db = server[args.dbname]
@@ -32,11 +51,19 @@ if args.dbname is not None:
         db = server.create(args.dbname)
     print("DB Connected")
 LOG_NAME = "output/log_{0}.json"
+=======
+>>>>>>> 728b75a83f7c2e71da461ee71168061df09e5d7f
 HOST_INFO = platform.uname()
 print("Running on {}".format(HOST_INFO.system))
 
 def save_reading(reading):
+<<<<<<< HEAD
     if db is not None:
+=======
+    if args.logdir:
+        json.dump(reading, log_file)
+    else:
+>>>>>>> 728b75a83f7c2e71da461ee71168061df09e5d7f
         db.save(reading)
 
 def get_app(host):
@@ -49,7 +76,9 @@ def get_app(host):
     if host == 'Linux':
         foreground_app = foreground_app.replace("\"","")
         foreground_app = re.split("= |\n", foreground_app)
-        foreground_app = {'program': foreground_app[3], 'title': foreground_app[1]}
+        idleTime = subprocess.check_output("xprintidle", stderr=subprocess.STDOUT,shell=True).decode()
+        idleTime = float(idleTime)/1000
+        foreground_app = {'program': foreground_app[3], 'title': foreground_app[1], 'idleTime':idleTime}
     elif host == 'Darwin':
         foreground_app = osaa.OSXActiveApp.getActive()
         foreground_app = foreground_app
@@ -92,7 +121,7 @@ try:
                         d_json = struct
                         #add time and foreground app to json
                         enrich_reading(d_json)
-#                pp.pprint(d_json)
+#               pp.pprint(d_json)
                         if config.BUFFER:
                             readings.append(d_json)
                             if len(readings) > MAX_READING_BUFFER:
@@ -119,10 +148,10 @@ try:
 #TODO add cl option for logging
 except KeyboardInterrupt:
     print("Quit; saving readings")
-    #with open(LOG_NAME.format(str(datetime.now())), 'w') as outfile:
-    #    json.dump(readings, outfile)
-        #, indent=4)
 finally:
-    print(sys.stderr, 'closing socket')
+    if log_file is not None:
+        log_file.close()
+        print("Closing Log")
     if sock:
         sock.close()
+        print(sys.stderr, 'closing socket')
