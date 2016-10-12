@@ -3,6 +3,8 @@ from Quartz import kCGWindowListOptionOnScreenOnly, kCGNullWindowID, CGWindowLis
 
 class OSXActiveApp():
     def getActive():
+        print(NSWorkspace.sharedWorkspace())
+        print(NSWorkspace.sharedWorkspace().activeApplication())
         app_name = NSWorkspace.sharedWorkspace().activeApplication()['NSApplicationName']
         win_name = None
         for app in NSWorkspace.sharedWorkspace().runningApplications():
