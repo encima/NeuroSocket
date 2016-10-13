@@ -11,14 +11,11 @@ from multiprocessing import Process
 import re
 import config
 import argparse
-from AppKit import NSWorkspace
-import osx.OSXActiveApp as osaa
 
 pp = pprint.PrettyPrinter(indent=4)
 parser = argparse.ArgumentParser(description='Log all the productivity')
 parser.add_argument('-o','--output',help='Output file name', required=False)
 parser.add_argument('-d','--dbname',help='DB name', required=False, default=None)
-#parser.add_argument('-d','--dbname',help='DB name', required=False, default=config.DB_NAME)
 parser.add_argument('-l', '--logdir', help='Directory to save logs', required=False)
 parser.add_argument('-i','--interval',help='Interval for readings', required=False, default=30, type=int)
 parser.add_argument("-m", "--mindwave", help="Connect to mindwave", action="store_true")
@@ -39,13 +36,13 @@ else:
     log_file = open(logpath, 'w+', encoding="utf8")
     print("Opened {} for writing".format(logpath))
 
-print(args.dbname)
 if args.dbname is not None:
     try:
         db = server[args.dbname]
     except:
         db = server.create(args.dbname)
     print("DB Connected")
+
 LOG_NAME = "output/log_{0}.json"
 HOST_INFO = platform.uname()
 print("Running on {}".format(HOST_INFO.system))
@@ -58,24 +55,24 @@ def save_reading(reading):
 
 def get_app(host):
     foreground_app = None
-    if host == 'Darwin':
-        foreground_app = osaa.OSXActiveApp.getActive()
-        print(foreground_app)
-        foreground_app = foreground_app
-    else:
-        try:
-            foreground_app = subprocess.check_output(config.FG_CMD[host], stderr=subprocess.STDOUT, shell=True)
-            foreground_app = foreground_app.decode()
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
-        if host == 'Linux':
-            foreground_app = foreground_app.replace("\"","")
-            foreground_app = re.split("= |\n", foreground_app)
-            idleTime = subprocess.check_output("xprintidle", stderr=subprocess.STDOUT,shell=True).decode()
-            idleTime = float(idleTime)/1000
-            foreground_app = {'program': foreground_app[3], 'title': foreground_app[1], 'idleTime':idleTime}
-        elif host == 'Windows':
-            foreground_app = json.loads(foreground_app)
+    try:
+        foreground_app = subprocess.check_output(config.FG_CMD[host], stderr=subprocess.STDOUT, shell=True, timeout=5)
+        foreground_app = foreground_app.decode()
+    except subprocess.TimeoutExpired as e:
+        print("Command timed out")
+        return {'program': 'Could not detect'}
+    except subprocess.CalledProcessError as e:
+        print(e)
+        return {'program': 'Could not detect'}
+        # raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
+    if host == 'Linux':
+        foreground_app = foreground_app.replace("\"","")
+        foreground_app = re.split("= |\n", foreground_app)
+        idleTime = subprocess.check_output("xprintidle", stderr=subprocess.STDOUT,shell=True).decode()
+        idleTime = float(idleTime)/1000
+        foreground_app = {'program': foreground_app[3], 'title': foreground_app[1], 'idleTime':idleTime}
+    elif host == 'Windows' or host == 'Darwin':
+        foreground_app = json.loads(foreground_app)
     return foreground_app
 
 def enrich_reading(d_json):
@@ -98,7 +95,6 @@ try:
     # Send config message to mindwave
     if sock:
         message = "{\"enableRawOutput\": false, \"format\": \"Json\"}\n";
-    # print('sending "%s"' % message)
         sock.send(config.CONFSTRING.encode('utf8'))
 
     # Look for the response
