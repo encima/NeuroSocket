@@ -62,7 +62,7 @@ def get_app(host):
         print("Command timed out")
         return {'program': 'Could not detect'}
     except subprocess.CalledProcessError as e:
-        print(e)
+        print("Error running script")
         return {'program': 'Could not detect'}
         # raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
     if host == 'Linux':
@@ -76,13 +76,10 @@ def get_app(host):
     return foreground_app
 
 def enrich_reading(d_json):
-    print(d_json)
     d_json['time'] = str(datetime.now())
     d_json['host'] = HOST_INFO.node
-    print(HOST_INFO.node)
     d_json['app'] = get_app(HOST_INFO.system)
     d_json['platform'] = HOST_INFO.system
-    print(d_json)
 
 sock = None
 if args.mindwave:

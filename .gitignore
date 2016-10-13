@@ -3,7 +3,8 @@
 #####=== Node ===#####
 ns/*
 # Logs
-logs
+logs/**
+log/**
 *.log
 
 # Runtime data
