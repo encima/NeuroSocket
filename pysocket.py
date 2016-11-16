@@ -14,7 +14,7 @@ import argparse
 
 pp = pprint.PrettyPrinter(indent=4)
 parser = argparse.ArgumentParser(description='Log all the productivity')
-parser.add_argument('-o','--output',help='Output file name', required=False)
+#parser.add_argument('-o','--output',help='Output file name', required=False)
 parser.add_argument('-d','--dbname',help='DB name', required=False, default=None)
 parser.add_argument('-l', '--logdir', help='Directory to save logs', required=False)
 parser.add_argument('-i','--interval',help='Interval for readings', required=False, default=30, type=int)
@@ -24,7 +24,8 @@ server = couchdb.Server()
 server.resource.credentials = (config.DB_USERNAME, config.DB_PWD)
 db = None
 log_file = None
-if not args.logdir:
+if not args.logdir and args.dbname:
+    print(args.dbname)
     try:
         db = server[args.dbname]
     except:
@@ -57,6 +58,8 @@ def get_app(host):
     foreground_app = None
     try:
         foreground_app = subprocess.check_output(config.FG_CMD[host], stderr=subprocess.STDOUT, shell=True, timeout=5)
+#        foreground_app = subprocess.Popen(config.FG_CMD[host], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+ #       foreground_app, err = foreground_app.communicate()
         foreground_app = foreground_app.decode()
     except subprocess.TimeoutExpired as e:
         print("Command timed out")
