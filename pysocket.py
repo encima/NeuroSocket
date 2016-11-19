@@ -10,12 +10,13 @@ import couchdb
 from multiprocessing import Process
 import re
 import config
-import argparse
+import argparse 
+from couchbase.bucket import Bucket 
 
 pp = pprint.PrettyPrinter(indent=4)
 parser = argparse.ArgumentParser(description='Log all the productivity')
 #parser.add_argument('-o','--output',help='Output file name', required=False)
-parser.add_argument('-d','--dbname',help='DB name', required=False, default=None)
+parser.add_argument('-d','--dbname',help='DB name', required=False, default="readings")
 parser.add_argument('-l', '--logdir', help='Directory to save logs', required=False)
 parser.add_argument('-i','--interval',help='Interval for readings', required=False, default=30, type=int)
 parser.add_argument("-m", "--mindwave", help="Connect to mindwave", action="store_true")
@@ -26,10 +27,11 @@ db = None
 log_file = None
 if not args.logdir and args.dbname:
     print(args.dbname)
-    try:
-        db = server[args.dbname]
-    except:
-        db = server.create(args.dbname)
+    db = Bucket('couchbase://localhost/{}'.format(args.dbname))
+    #try:
+    #    db = server[args.dbname]
+    #except:
+    #    db = server.create(args.dbname)
     print("DB Connected")
 else:
     print(datetime.today().toordinal())
@@ -37,12 +39,6 @@ else:
     log_file = open(logpath, 'w+', encoding="utf8")
     print("Opened {} for writing".format(logpath))
 
-if args.dbname is not None:
-    try:
-        db = server[args.dbname]
-    except:
-        db = server.create(args.dbname)
-    print("DB Connected")
 
 LOG_NAME = "output/log_{0}.json"
 HOST_INFO = platform.uname()
@@ -52,7 +48,8 @@ def save_reading(reading):
     if args.logdir:
         json.dump(reading, log_file)
     elif db is not None:
-        db.save(reading)
+        #db.save(reading)
+        db.upsert(reading['time'], reading)
 
 def get_app(host):
     foreground_app = None
