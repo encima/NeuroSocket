@@ -12,6 +12,12 @@ import re
 import config
 import argparse 
 from couchbase.bucket import Bucket 
+from AppKit import NSWorkspace
+
+class PySocket():
+    
+    def __init__(self):
+        pass
 
 pp = pprint.PrettyPrinter(indent=4)
 parser = argparse.ArgumentParser(description='Log all the productivity')
@@ -27,7 +33,7 @@ db = None
 log_file = None
 if not args.logdir and args.dbname:
     print(args.dbname)
-    db = Bucket('couchbase://localhost/{}'.format(args.dbname))
+    db = Bucket('couchbase://localhost/default')
     #try:
     #    db = server[args.dbname]
     #except:
