@@ -17,12 +17,14 @@ class OSX_App_Helper(threading.Thread):
         self.window_list = CGWindowListCopyWindowInfo(self.options, kCGNullWindowID)
         self.interval = interval
         self.running = True
-        self.active_app = None
+        self.active_apps = {}
+        self.active_json = []
         # time.sleep(5) #wait in case of a context switch on first launchecho $((`ioreg -c IOHIDSystem | sed -e '/HIDIdleTime/ !{ d' -e 't' -e '}' -e 's/.* = //g' -e 'q'` / 1000000000))
         for original in self.window_list:
             if self.check_app(original):
                 #TODO handle for more than one app
-                self.active_app = original
+                self.active_apps[original["kCGWindowName"]] = original
+    
 
     def check_app(self, app):
         if "Window Server" not in app['kCGWindowOwnerName'] and app["kCGWindowBounds"]["Height"] > 0 and app["kCGWindowBounds"]["Width"] > 0 and app["kCGWindowLayer"] == 0 and app["kCGWindowStoreType"] == 1:
@@ -32,15 +34,18 @@ class OSX_App_Helper(threading.Thread):
 
     def run(self):
         while self.running:
+            self.active_json.clear()
             new_windows = CGWindowListCopyWindowInfo(self.options, kCGNullWindowID)
             changes = list(set(new_windows) - set(self.window_list)) #detect changes between previous window set and new
             for change in changes:
                 if self.check_app(change):
-                    self.active_app = change
+                    self.active_apps[change["kCGWindowName"]] = change
             idle = subprocess.check_output(["echo $((`ioreg -c IOHIDSystem | sed -e '/HIDIdleTime/ !{ d' -e 't' -e '}' -e 's/.* = //g' -e 'q'` / 1000000000))"], shell=True).decode()
             self.idle_time = int(idle)
             self.window_list = new_windows
-            self.active_json = {"program": self.active_app["kCGWindowOwnerName"], "title": self.active_app["kCGWindowName"], "idleTime": self.idle_time}
+            for app in self.active_apps:
+                window = self.active_apps[app]
+                self.active_json.append({"program": window["kCGWindowOwnerName"], "title": window["kCGWindowName"], "idleTime": self.idle_time})
             print(self.active_json)
             time.sleep(self.interval)
 
