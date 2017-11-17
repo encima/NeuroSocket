@@ -1,5 +1,5 @@
-HOST = "127.0.0.1"
-PORT = 13854
+HOST = "/dev/rfcomm0"
+PORT = 1
 DB_PORT = 5984
 CONFSTRING = '{"enableRawOutput": false, "format": "Json"}\n'
 DB_USERNAME = "encima"
