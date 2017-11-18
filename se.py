@@ -45,11 +45,11 @@ def parse_payload(payload):
         print(code)
         length = CODES[code]['length']
         if length == 1:
-            value = payload[p+1:(p+1)+length]
+            value = payload[1:2]
             if value:
                 print(ord(value))
         elif length > 1:
-            print(decode(payload[p:p+length]))
+            print(decode(payload[1:1+length]))
         parse_payload(payload[1 + length:])
     else:
         Print("Unknown code")
