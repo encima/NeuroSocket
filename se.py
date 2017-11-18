@@ -55,30 +55,25 @@ def parse_payload(payload):
         Print("Unknown code")
 
 
-print('Reading...')
 while True:
-    # read the two sync codes at the start of a packet
-    if ser.read() == CODES['SYNC']['code']:
-        if ser.read() == CODES['SYNC']['code']:
-            while True:
-                # read the payload length
-                plength = ord(ser.read())
+    if ser.read(1) == CODES['SYNC']['code']:
+        if ser.read(1) == CODES['SYNC']['code']:
+            plength = ord(ser.read(1))
+            if plength > 170:
+                break
+            # Read in the payload
+            
+            payload = b''
+            for i in range(plength):
+                t = ser.read(1)
+                payload += t
+            # Verify its checksum
+            val = sum(b for b in payload)
+            val &= 0xff
+            val = ~val & 0xff
+            chksum = ord(ser.read(1))
+            if val ==  chksum:
+                parse_payload(payload)
+            else:
+                print('Bad checksum')
 
-                # check PLENGTH TOO LARGE
-                if plength > 170:
-                    continue
-
-                # Read in the payload
-                payload = ser.read(plength)
-
-                # Verify its checksum
-                val = sum(b for b in payload[:-1])
-                val &= 0xff
-                val = ~val & 0xff
-                chksum = ord(ser.read())
-
-                # if val == chksum:
-                if True and len(payload) > 0:  # ignore bad checksums
-                    parse_payload(payload)
-                else:
-                    print('Bad checksum')
