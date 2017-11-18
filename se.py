@@ -37,17 +37,19 @@ def decode(bytes, order='big',):
 
 def split_on_code(payload):
     packets = []
-    for p in range(0, len(payload)):
-        for k in CODES:
-            if payload[p] == ord(CODES[k]['code']):
-                print(k)
-                length = CODES[k]['length']
-                if length == 1:
-                    value = payload[p+1:(p+1)+length]
-                    if value:
-                        print(ord(value))
-                elif length > 1:
-                    print(decode(payload[p:p+length]))
+    if len(payload) > 4:
+        print(payload)
+    # for p in range(0, len(payload)):
+    #     for k in CODES:
+    #         if payload[p] == ord(CODES[k]['code']):
+    #             print(k)
+    #             length = CODES[k]['length']
+    #             if length == 1:
+    #                 value = payload[p+1:(p+1)+length]
+    #                 if value:
+    #                     print(ord(value))
+    #             elif length > 1:
+    #                 print(decode(payload[(p+1):(p+1)+length]))
 
 
 def parse_payload(payload):
@@ -56,13 +58,11 @@ def parse_payload(payload):
     """
     while payload:
         # Parse data row
-        excode = 0
-        # print(payload)
-        packets = payload.split(b'\xaa\xaa')
         print(payload)
-        for p in packets:
-            if len(p) > 0:
-                split_on_code(p)
+        # for p in payload:
+        #     if len(p) > 0:
+        #         split_on_code(p)
+        #         pass
                 # try:
                 #     code, payload = p[0], p[1:]
                 # except IndexError:
@@ -136,7 +136,7 @@ def parse_payload(payload):
                 #         pass
                 #     elif code == ord(CODES['HEADSET_DISCONNECTED']['code']):
                 #         # Headset disconnected
-                #         headset_id = value.encode('hex')
+                #         headset_id = value.decode('hex')
                 #         # print('DISCONNECTED')
                 #         pass
                 #     elif code == ord(CODES['REQUEST_DENIED']['code']):
@@ -156,27 +156,26 @@ def parse_payload(payload):
 
 
 print('Reading...')
+
+
 while True:
-    if ser.read() == CODES['SYNC']['code']:
-        if ser.read() == CODES['SYNC']['code']:
-            while True:
-                plength = ord(ser.read())
-                if plength != 170:
-                    break
-                if plength > 170:
-                    continue
-
-                # Read in the payload
-                payload = ser.read(plength)
-
-                # Verify its checksum
-                val = sum(b for b in payload[:-1])
-                val &= 0xff
-                val = ~val & 0xff
-                chksum = ord(ser.read())
-
-                # if val == chksum:
-                if True:  # ignore bad checksums
-                    parse_payload(payload)
-                else:
-                    print('Bad checksum')
+    if ser.read(1) == CODES['SYNC']['code']:
+        if ser.read(1) == CODES['SYNC']['code']:
+            plength = ord(ser.read(1))
+            if plength > 170:
+                break
+            # Read in the payload
+            
+            payload = b''
+            for i in range(plength):
+                t = ser.read(1)
+                payload += t
+            # Verify its checksum
+            val = sum(b for b in payload)
+            val &= 0xff
+            val = ~val & 0xff
+            chksum = ord(ser.read(1))
+            if val ==  chksum:
+                parse_payload(payload)
+            else:
+                print('Bad checksum')
