@@ -10,10 +10,4 @@ router.get('/', function(req, res, next) {
 	res.render('index', {'title':'Mindwave'});
 });
 
-router.get('/stations', function(req, res, next) {
-	fs.createReadStream('stations.csv').pipe(parse({delimiter: ','}, function(err, data){
-		res.render('stations', {'title':'BDI', 'locs': data});
-	}));
-});
-
 module.exports = router;

@@ -10,9 +10,9 @@ server.resource.credentials = (config.DB_USERNAME, config.DB_PWD)
 db = None
 log_file = None
 try:
-    db = server['waves']
+    db = server['mindwave_logs']
 except:
-    db = server.create('waves')
+    db = server.create('mindwave_logs')
 print("DB Connected")
 
 CODES = {
