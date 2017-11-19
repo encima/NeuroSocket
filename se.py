@@ -1,6 +1,19 @@
 import serial
 import codecs
 import base64
+import couchdb
+import config
+from datetime import datetime
+
+server = couchdb.Server()
+server.resource.credentials = (config.DB_USERNAME, config.DB_PWD)
+db = None
+log_file = None
+try:
+    db = server['waves']
+except:
+    db = server.create('waves')
+print("DB Connected")
 
 CODES = {
     'CONNECT': {'code': b'\xc0', 'length': 0},
@@ -163,6 +176,9 @@ def handle_load(payload):
             w['midGamma'] = val0 * 65536 + \
                 val1 * 256 + int(payload[i].hex(), 16)
             print(w)
+            w['recorded'] = datetime.today()
+            db.save(w)
+
         else:
             pass
         i = i + 1
