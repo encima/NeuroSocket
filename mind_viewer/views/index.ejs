@@ -20,8 +20,12 @@
      var drawn = false;
      var times = ['time'],
          theta = ['theta'],
-         beta = ['beta'],
-         delta = ['delta'];
+         beta = ['low beta'],
+         highBeta = ['highBeta'],
+         delta = ['delta'],
+         alpha = ['low alpha'],
+         highAlpha = ['high alpha'],
+         gamma = ['low gamma'];
 
 		window.onload = function() {
             /*var date = new Date();
@@ -50,9 +54,13 @@
                        //only add if time does not exist already 
                         if(times.indexOf(time) === -1) {
                             theta.push(reading['theta']);
-                            beta.push(reading['highBeta']);
+                            beta.push(reading['lowBeta']);
+                            highBeta.push(reading['highBeta']);
                             delta.push(reading['delta']);
+                            alpha.push(reading['lowAlpha']);
+                            highAlpha.push(reading['highAlpha']);
                             //TODO lowBeta, lowGamme, highGamme etc
+                            gamma.push(reading['lowGamma']);
                             times.push(time);
                         }
                             setTimeout(function(){ drawPlot() }, 1000);
@@ -87,7 +95,11 @@
                             times,
                             theta,
                             beta,
-                            delta
+                            delta,
+                            alpha,
+                            highAlpha,
+                            highBeta,
+                            gamma
                         ]
                     },
                     axis: {
@@ -106,7 +118,11 @@
                         times, 
                         theta,
                         beta,
-                        delta
+                        delta,
+                        alpha,
+                        highAlpha,
+                        highBeta,
+                        gamma
                     ]
                 });
            }
