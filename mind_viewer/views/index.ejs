@@ -31,7 +31,7 @@
 //TODO store the since var so as to avoid huge timescales
            if (window.EventSource) {
               var resultsIn = {};
-              var sourceIn = new EventSource(DB_HOST + DB + "/_changes?feed=eventsource");
+              var sourceIn = new EventSource(DB_HOST + DB + "/_changes?feed=eventsource&since=now");
               sourceIn.onerror = function(e) {
                     console.log('EventSource failed');
                     console.log(e);
