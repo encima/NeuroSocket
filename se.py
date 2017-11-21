@@ -176,7 +176,8 @@ def handle_load(payload):
             w['midGamma'] = val0 * 65536 + \
                 val1 * 256 + int(payload[i].hex(), 16)
             print(w)
-            w['recorded'] = datetime.today()
+            d_format ='%Y-%m-%d %H:%M:%S'
+            w['time'] = datetime.strftime(datetime.today(), d_format)
             db.save(w)
 
         else:
@@ -191,7 +192,6 @@ while True:
             if plength > 170:
                 break
             # Read in the payload
-            
             payload = []
             val = 0
             for i in range(plength):

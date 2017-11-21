@@ -49,10 +49,9 @@
                         var time = formatDate(reading['time'].split('.')[0]);
                        //only add if time does not exist already 
                         if(times.indexOf(time) === -1) {
-                            console.log(times);
-                            theta.push(reading['eegPower']['theta']);
-                            beta.push(reading['eegPower']['highBeta']);
-                            delta.push(reading['eegPower']['delta']);
+                            theta.push(reading['theta']);
+                            beta.push(reading['highBeta']);
+                            delta.push(reading['delta']);
                             //TODO lowBeta, lowGamme, highGamme etc
                             times.push(time);
                         }
